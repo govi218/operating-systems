@@ -251,9 +251,13 @@ void (*orig_exit_group)(int);
  */
 void my_exit_group(int status)
 {
+	//lock list remove pid, unlock
+	spin_lock(pidlist_lock);
+	del_pid(current->pid);
+	spin_unlock(pidlist_lock);
 
-
-
+	//continue with original exit_group
+	orig_exit_group(status);
 }
 //----------------------------------------------------------------
 
@@ -276,10 +280,6 @@ void my_exit_group(int status)
  * - Don't forget to call the original system call, so we allow processes to proceed as normal.
  */
 asmlinkage long interceptor(struct pt_regs reg) {
-
-
-
-
 
 	return 0; // Just a placeholder, so it compiles with no warnings!
 }
@@ -365,14 +365,32 @@ long (*orig_custom_syscall)(void);
  * - Ensure synchronization as needed.
  */
 static int init_function(void) {
+	//lock syscall table and set it to r/w
+	spin_lock(&calltable_lock);
+	set_addr_rw((unsigned long) sys_call_table);
 
+	//store original syscall at MY_CUSTOM_SYSCALL and swap with custom
+	orig_custom_syscall = sys_call_table[MY_CUSTOM_SYSCALL];
+	sys_call_table[MY_CUSTOM_SYSCALL] = &my_syscall;
 
+	//store original exit group syscall and swap with custom
+	orig_exit_group = sys_call_table[__NR_exit_group];
+	sys_call_table[__NR_exit_group] = &my_exit_group;
 
+	//set back to read only and unlock table
+	set_addr_ro((unsigned long) sys_call_table);
+	spin_unlock(&calltable_lock);
 
+	//loop through all syscalls and initialize a mytable for each one
+	for (int i = 0; i < NR_syscalls; ++i) 
+	{
+		INIT_LIST_HEAD(table[i].my_list);
+		table[i].intercepted = 0;
+		table[i].monitored = 0;
+		table[i].listcount = 0;
+	}
 
-
-
-	return 0;
+	return 7;
 }
 
 /**
@@ -387,12 +405,23 @@ static int init_function(void) {
  */
 static void exit_function(void)
 {        
+	//lock syscall table and set it to r/w
+	spin_lock(&calltable_lock);
+	set_addr_rw((unsigned long) sys_call_table);
 
+	//replace original values
+	sys_call_table[MY_CUSTOM_SYSCALL] = orig_custom_syscall;
+	sys_call_table[__NR_exit_group] = orig_exit_group;
 
+	//set to read only and unlock
+	set_addr_ro((unsigned long) sys_call_table);
+	spin_unlock(&calltable_lock);
 
-
-
-
+	//destroy all lists for syscalls
+	for (int i = 0; i < NR_syscalls; ++i) 
+	{
+		destroy_list(i);
+	}
 }
 
 module_init(init_function);
