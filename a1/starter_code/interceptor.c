@@ -304,7 +304,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
  *           pid_task(find_vpid(pid), PIDTYPE_PID)
  * - Check that the caller has the right permissions (-EPERM)
  *      For the first two commands, we must be root (see the current_uid() macro).
- *      For the last two commands, the following logic applies:
+ *      For the last two commands, the following logic applies:how can i get the pid and syscall from pt_regs
  *        - is the calling process root? if so, all is good, no doubts about permissions.
  *        - if not, then check if the 'pid' requested is owned by the calling process 
  *        - also, if 'pid' is 0 and the calling process is not root, then access is denied 
@@ -313,6 +313,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
  * - Check for correct context of commands (-EINVAL):
  *     a) Cannot de-intercept a system call that has not been intercepted yet.
  *     b) Cannot stop monitoring for a pid that is not being monitored, or if the 
+	return 0;
  *        system call has not been intercepted yet.
  * - Check for -EBUSY conditions:
  *     a) If intercepting a system call that is already intercepted.
@@ -335,13 +336,92 @@ asmlinkage long interceptor(struct pt_regs reg) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
+	valid_syscall(syscall);
 
+	switch(cmd)
+	{
+		case REQUEST_SYSCALL_INTERCEPT:
+			//check if root 
+			is_root();
+			//lock and set r/w
+			spin_lock(&calltable_lock);
+			set_addr_rw((unsigned long) sys_call_table);
 
+			//check if process is already intercepted
+			if(table[syscall].f != NULL) {
+				return -EINVAL;
+			}
 
+			//save original to table
+			table[syscall].f = sys_call_table[syscall];
 
+			//intercept syscall
+			sys_call_table[syscall] = &interceptor;
 
+			//unlock and set ro
+			set_addr_ro((unsigned long) sys_call_table);
+			spin_unlock(&calltable_lock);
+			break;
+
+		case REQUEST_SYSCALL_RELEASE:
+			//check if root 
+			is_root();
+			//lock and set r/w
+			spin_lock(&calltable_lock);
+			set_addr_rw((unsigned long) sys_call_table);
+
+			//check if process is not intercepted
+			if(table[syscall].f == NULL) {
+				return -EINVAL;
+			}
+
+			//restore original syscall
+			sys_call_table[syscall] = table[syscall].f;
+
+			//reset original syscall in table
+			table[syscall].f = NULL;
+
+			//unlock and set ro
+			set_addr_ro((unsigned long) sys_call_table);
+			spin_unlock(&calltable_lock);
+			break;
+
+		case REQUEST_START_MONITORING:
+			valid_pid(pid);
+
+		case REQUEST_STOP_MONITORING:
+			valid_pid(pid);
+
+	}
 	return 0;
 }
+
+/* Helper functions for my_syscall()*/
+
+//checks if a syscall is valid 
+long valid_syscall(int syscall) {
+	if(syscall > NR_syscalls || syscall < 0 || syscall == MY_CUSTOM_SYSCALL) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+//checks if a pid is valid 
+long valid_pid(int pid) {
+	if(pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+//checks if the user associated with the process is root
+long is_root(void) {
+	if(current_uid != 0) {
+		return -EPERM;valid_permissions
+	}
+	return 0;
+}
+
 
 /**
  *
