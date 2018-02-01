@@ -336,28 +336,33 @@ asmlinkage long interceptor(struct pt_regs reg) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
-	valid_syscall(syscall);
+	if (!valid_syscall(syscall)){
+		return -EINVAL;
+	}
 
 	switch(cmd)
 	{
 		case REQUEST_SYSCALL_INTERCEPT:
 			//check if root 
-			is_root();
+			if (!is_root()){
+				return -EINVAL;
+			}
+
+			//check if process is already intercepted
+			if(table[syscall].intercepted == 1) {
+				return -EBUSY;
+			}
+
 			//lock and set r/w
 			spin_lock(&calltable_lock);
 			set_addr_rw((unsigned long) sys_call_table);
-
-			//check if process is already intercepted
-			if(table[syscall].f != NULL) {
-				return -EINVAL;
-			}
 
 			//save original to table
 			table[syscall].f = sys_call_table[syscall];
 
 			//intercept syscall
 			sys_call_table[syscall] = &interceptor;
-
+            table[syscall].intercepted = 1;
 			//unlock and set ro
 			set_addr_ro((unsigned long) sys_call_table);
 			spin_unlock(&calltable_lock);
@@ -365,21 +370,23 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 		case REQUEST_SYSCALL_RELEASE:
 			//check if root 
-			is_root();
+			if (!is_root()){
+				return -EINVAL;
+			}
+			//check if process is not intercepted
+			if(table[syscall].intercepted == 0) {
+				return -EINVAL;
+			}
+
 			//lock and set r/w
 			spin_lock(&calltable_lock);
 			set_addr_rw((unsigned long) sys_call_table);
-
-			//check if process is not intercepted
-			if(table[syscall].f == NULL) {
-				return -EINVAL;
-			}
 
 			//restore original syscall
 			sys_call_table[syscall] = table[syscall].f;
 
 			//reset original syscall in table
-			table[syscall].f = NULL;
+			table[syscall].intercepted = 1;
 
 			//unlock and set ro
 			set_addr_ro((unsigned long) sys_call_table);
@@ -387,10 +394,14 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			break;
 
 		case REQUEST_START_MONITORING:
-			valid_pid(pid);
+			if (!valid_pid(pid)){
+				return -EPERM;
+			}
 
 		case REQUEST_STOP_MONITORING:
-			valid_pid(pid);
+			if (!valid_pid(pid)){
+				return -EPERM;
+			}
 
 	}
 	return 0;
@@ -401,25 +412,25 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 //checks if a syscall is valid 
 long valid_syscall(int syscall) {
 	if(syscall > NR_syscalls || syscall < 0 || syscall == MY_CUSTOM_SYSCALL) {
-		return -EINVAL;
+		return 0;
 	}
-	return 0;
+	return 1;
 }
 
 //checks if a pid is valid 
 long valid_pid(int pid) {
 	if(pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) {
-		return -EINVAL;
+		return 0;
 	}
-	return 0;
+	return 1;
 }
 
 //checks if the user associated with the process is root
 long is_root(void) {
 	if(current_uid != 0) {
-		return -EPERM;valid_permissions
+		return 0;//valid_permissions
 	}
-	return 0;
+	return 1;
 }
 
 
