@@ -386,7 +386,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			sys_call_table[syscall] = table[syscall].f;
 
 			//reset original syscall in table
-			table[syscall].intercepted = 1;
+			table[syscall].intercepted = 0;
 
 			//unlock and set ro
 			set_addr_ro((unsigned long) sys_call_table);
