@@ -288,8 +288,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
 		log_message(current->pid, reg.ax, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.bp);
 	} else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
 		log_message(current->pid, reg.ax, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.bp);
-		}	
-	}
+	}	
 
 	// unlock?
 
