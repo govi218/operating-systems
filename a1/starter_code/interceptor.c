@@ -501,7 +501,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				int result = del_pid_sysc(pid, syscall);
 				if (result != 0){
 					spin_unlock(&pidlist_lock);
-					return -ENOMEM;
+					return -EINVAL;
 				}
 				//unlock
 				spin_unlock(&pidlist_lock);
