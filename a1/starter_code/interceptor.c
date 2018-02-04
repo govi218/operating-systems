@@ -455,11 +455,18 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				table[syscall].monitored = 1;
 				//lock pidlist
 				spin_lock(&pidlist_lock);
-				int result = add_pid_sysc(pid, syscall);
-				if (result != 0){
+
+				if (!check_pid_monitored(syscall, pid)){
+					int result = add_pid_sysc(pid, syscall);
+					if (result != 0){
+						spin_unlock(&pidlist_lock);
+						return -ENOMEM;
+					}
+				} else {
 					spin_unlock(&pidlist_lock);
-					return -ENOMEM;
+					return -EBUSY;
 				}
+				
 				//unlock
 				spin_unlock(&pidlist_lock);
 			}
@@ -488,10 +495,15 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			} else if (table[syscall].monitored == 2){
 				//lock pidlist
 				spin_lock(&pidlist_lock);
-				int result = add_pid_sysc(pid, syscall);
-				if (result != 0){
+				if (!check_pid_monitored(syscall, pid)){
+					int result = add_pid_sysc(pid, syscall);
+					if (result != 0){
+						spin_unlock(&pidlist_lock);
+						return -ENOMEM;
+					}
+				} else {
 					spin_unlock(&pidlist_lock);
-					return -ENOMEM;
+					return -EBUSY;
 				}
 				//unlock
 				spin_unlock(&pidlist_lock);
