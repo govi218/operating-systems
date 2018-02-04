@@ -429,7 +429,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		case REQUEST_START_MONITORING:
 
 			//check if valid pid
-			if (!valid_pid(pid)){
+			if (!valid_pid(pid) || table[syscall].intercepted != 1){
 				return -EINVAL;
 			}
 			//if not root, check if pid to be monitored is owned by calling user
@@ -469,13 +469,27 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				
 				//unlock
 				spin_unlock(&pidlist_lock);
+
+			} else {
+				if (check_pid_monitored(syscall, pid)){
+					spin_lock(&pidlist_lock);
+					int result = del_pid_sysc(pid, syscall);
+					if (result != 0){
+						spin_unlock(&pidlist_lock);
+						return -EINVAL;
+					}
+					//unlock
+					spin_unlock(&pidlist_lock);
+				} else {
+					return -EBUSY;
+				}
 			}
 
 			break;
 
 
 		case REQUEST_STOP_MONITORING:
-			if (!valid_pid(pid)){
+			if (!valid_pid(pid) || table[syscall].intercepted != 1){
 				return -EINVAL;
 			}
 			if (!is_root())
@@ -517,7 +531,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				}
 				//unlock
 				spin_unlock(&pidlist_lock);
-			}
+			} 
 
 	}
 	return 0;
