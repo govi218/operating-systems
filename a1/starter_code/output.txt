@@ -1,0 +1,35 @@
+make -C /lib/modules/`uname -r`/build M=`pwd`
+make[1]: Entering directory `/usr/src/linux-source-2.6.32'
+  CC [M]  /home/student/cscc69/a1/starter_code/interceptor.o
+/home/student/cscc69/a1/starter_code/interceptor.c: In function ‘my_exit_group’:
+/home/student/cscc69/a1/starter_code/interceptor.c:255: error: incompatible type for argument 1 of ‘_spin_lock’
+include/linux/spinlock_api_smp.h:22: note: expected ‘struct spinlock_t *’ but argument is of type ‘spinlock_t’
+/home/student/cscc69/a1/starter_code/interceptor.c:257: error: incompatible type for argument 1 of ‘__spin_unlock’
+include/linux/spinlock_api_smp.h:349: note: expected ‘struct spinlock_t *’ but argument is of type ‘spinlock_t’
+/home/student/cscc69/a1/starter_code/interceptor.c: In function ‘my_syscall’:
+/home/student/cscc69/a1/starter_code/interceptor.c:346: error: implicit declaration of function ‘valid_syscall’
+/home/student/cscc69/a1/starter_code/interceptor.c:354: error: implicit declaration of function ‘is_root’
+/home/student/cscc69/a1/starter_code/interceptor.c:406: error: implicit declaration of function ‘valid_pid’
+/home/student/cscc69/a1/starter_code/interceptor.c:432: warning: ISO C90 forbids mixed declarations and code
+/home/student/cscc69/a1/starter_code/interceptor.c:465: warning: ISO C90 forbids mixed declarations and code
+/home/student/cscc69/a1/starter_code/interceptor.c:475: warning: ISO C90 forbids mixed declarations and code
+/home/student/cscc69/a1/starter_code/interceptor.c: At top level:
+/home/student/cscc69/a1/starter_code/interceptor.c:491: error: conflicting types for ‘valid_syscall’
+/home/student/cscc69/a1/starter_code/interceptor.c:346: note: previous implicit declaration of ‘valid_syscall’ was here
+/home/student/cscc69/a1/starter_code/interceptor.c:499: error: conflicting types for ‘valid_pid’
+/home/student/cscc69/a1/starter_code/interceptor.c:406: note: previous implicit declaration of ‘valid_pid’ was here
+/home/student/cscc69/a1/starter_code/interceptor.c:507: error: conflicting types for ‘is_root’
+/home/student/cscc69/a1/starter_code/interceptor.c:354: note: previous implicit declaration of ‘is_root’ was here
+/home/student/cscc69/a1/starter_code/interceptor.c: In function ‘is_root’:
+/home/student/cscc69/a1/starter_code/interceptor.c:508: error: ‘current_uid’ undeclared (first use in this function)
+/home/student/cscc69/a1/starter_code/interceptor.c:508: error: (Each undeclared identifier is reported only once
+/home/student/cscc69/a1/starter_code/interceptor.c:508: error: for each function it appears in.)
+/home/student/cscc69/a1/starter_code/interceptor.c: In function ‘init_function’:
+/home/student/cscc69/a1/starter_code/interceptor.c:554: error: ‘for’ loop initial declarations are only allowed in C99 mode
+/home/student/cscc69/a1/starter_code/interceptor.c:554: note: use option -std=c99 or -std=gnu99 to compile your code
+/home/student/cscc69/a1/starter_code/interceptor.c: In function ‘exit_function’:
+/home/student/cscc69/a1/starter_code/interceptor.c:589: warning: ISO C90 forbids mixed declarations and code
+make[2]: *** [/home/student/cscc69/a1/starter_code/interceptor.o] Error 1
+make[1]: *** [_module_/home/student/cscc69/a1/starter_code] Error 2
+make[1]: Leaving directory `/usr/src/linux-source-2.6.32'
+make: *** [kbuild] Error 2
