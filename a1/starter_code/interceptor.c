@@ -378,7 +378,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		case REQUEST_SYSCALL_INTERCEPT:
 			//check if root 
 			if (!is_root()){
-				return -EINVAL;
+				return -EPERM;
 			}
 
 			//check if process is already intercepted
@@ -404,7 +404,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 		case REQUEST_SYSCALL_RELEASE:
 			//check if root 
 			if (!is_root()){
-				return -EINVAL;
+				return -EPERM;
 			}
 			//check if process is not intercepted
 			if(table[syscall].intercepted == 0) {
