@@ -553,7 +553,7 @@ static int init_function(void) {
 	int i;
 	for (i = 0; i < NR_syscalls; ++i) 
 	{
-		INIT_LIST_HEAD(table[i].my_list);
+		INIT_LIST_HEAD(&table[i].my_list);
 		table[i].intercepted = 0;
 		table[i].monitored = 0;
 		table[i].listcount = 0;
@@ -588,7 +588,7 @@ static void exit_function(void)
 
 	//destroy all lists for syscalls
 	int i;
-	for (int i = 0; i < NR_syscalls; i++) 
+	for (i = 0; i < NR_syscalls; i++) 
 	{
 		destroy_list(i);
 	}
