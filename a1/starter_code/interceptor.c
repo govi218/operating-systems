@@ -281,18 +281,14 @@ void my_exit_group(int status)
  */
 asmlinkage long interceptor(struct pt_regs reg) {
 
-    // lock?
-
 	// check if current pid is monitored
 	if (check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==1){
 		log_message(current->pid, reg.ax, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.bp);
 	} else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
 		log_message(current->pid, reg.ax, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.bp);
 	}
-	// unlock?
 
-    //how to call the original system call table[reg.ax]
-	return 0; // Just a placeholder, so it compiles with no warnings!
+	return table[reg.ax].f(reg); // Just a placeholder, so it compiles with no warnings!
 }
 
 /**
@@ -419,26 +415,29 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 					return -EPERM;
 				}
 			}
-			//lock pidlist
-			spin_lock(&pidlist_lock);
+
 			//call the method that adds pid to syscall's monitored
 			//note: if pid is 0 do we have to manually add all unmonitored processes?
-			int result = add_pid_sysc(pid, syscall);
-			if (result != 0)
-			{
-				return -ENOMEM;
+			if (pid == 0){
+				// remove what was previously in the list
+				destroy_list(syscall);
+				// set value so it monitors everything
+				table[syscall].monitored = 2;
+
+			} else if (table[syscall].monitored != 2){
+			
+				table[syscall].monitored = 1;
+				//lock pidlist
+				spin_lock(&pidlist_lock);
+				int result = add_pid_sysc(pid, syscall);
+				if (result != 0){
+					spin_unlock(&pidlist_lock);
+					return -ENOMEM;
+				}
+				//unlock
+				spin_unlock(&pidlist_lock);
 			}
-			//unlock
-			spin_unlock(&pidlist_lock);
-			//update metadata
-			table[syscall].monitored = 1;
-			//note: I'm not completely sure if my_list is supposed to maintain 
-			//the list head but that's what it appears to be for
-			if (listcount == 0)
-			{
-				table[syscall].my_list = &syscall;
-			}
-			table[syscall].listcount++;
+
 			break;
 
 
@@ -452,6 +451,34 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				{
 					return -EPERM;
 				}
+			}
+
+			//call the method that adds pid to syscall's monitored
+			//note: if pid is 0 do we have to manually add all unmonitored processes?
+			if (pid == 0){
+				// remove what was previously in the list
+				destroy_list(syscall);
+
+			} else if (table[syscall].monitored == 2){
+				//lock pidlist
+				spin_lock(&pidlist_lock);
+				int result = add_pid_sysc(pid, syscall);
+				if (result != 0){
+					spin_unlock(&pidlist_lock);
+					return -ENOMEM;
+				}
+				//unlock
+				spin_unlock(&pidlist_lock);
+			} else if (table[syscall].monitored == 1){
+				//lock pidlist
+				spin_lock(&pidlist_lock);
+				int result = del_pid_sysc(pid, syscall);
+				if (result != 0){
+					spin_unlock(&pidlist_lock);
+					return -ENOMEM;
+				}
+				//unlock
+				spin_unlock(&pidlist_lock);
 			}
 
 	}
