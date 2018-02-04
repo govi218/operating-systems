@@ -252,9 +252,9 @@ void (*orig_exit_group)(int);
 void my_exit_group(int status)
 {
 	//lock list remove pid, unlock
-	spin_lock(pidlist_lock);
+	spin_lock(&pidlist_lock);
 	del_pid(current->pid);
-	spin_unlock(pidlist_lock);
+	spin_unlock(&pidlist_lock);
 
 	//continue with original exit_group
 	orig_exit_group(status);
@@ -289,6 +289,32 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	}
 
 	return table[reg.ax].f(reg); // Just a placeholder, so it compiles with no warnings!
+}
+
+/* Helper functions for my_syscall()*/
+
+//checks if a syscall is valid 
+long valid_syscall(int syscall) {
+	if(syscall > NR_syscalls || syscall < 0 || syscall == MY_CUSTOM_SYSCALL) {
+		return 0;
+	}
+	return 1;
+}
+
+//checks if a pid is valid 
+long valid_pid(int pid) {
+	if(pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) {
+		return 0;
+	}
+	return 1;
+}
+
+//checks if the user associated with the process is root
+long is_root(void) {
+	if(current_uid() != 0) {
+		return 0;//valid_permissions
+	}
+	return 1;
 }
 
 /**
@@ -485,33 +511,6 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 	return 0;
 }
 
-/* Helper functions for my_syscall()*/
-
-//checks if a syscall is valid 
-long valid_syscall(int syscall) {
-	if(syscall > NR_syscalls || syscall < 0 || syscall == MY_CUSTOM_SYSCALL) {
-		return 0;
-	}
-	return 1;
-}
-
-//checks if a pid is valid 
-long valid_pid(int pid) {
-	if(pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) {
-		return 0;
-	}
-	return 1;
-}
-
-//checks if the user associated with the process is root
-long is_root(void) {
-	if(current_uid != 0) {
-		return 0;//valid_permissions
-	}
-	return 1;
-}
-
-
 /**
  *
  */
@@ -551,7 +550,8 @@ static int init_function(void) {
 	spin_unlock(&calltable_lock);
 
 	//loop through all syscalls and initialize a mytable for each one
-	for (int i = 0; i < NR_syscalls; ++i) 
+	int i;
+	for (i = 0; i < NR_syscalls; ++i) 
 	{
 		INIT_LIST_HEAD(table[i].my_list);
 		table[i].intercepted = 0;
@@ -587,7 +587,8 @@ static void exit_function(void)
 	spin_unlock(&calltable_lock);
 
 	//destroy all lists for syscalls
-	for (int i = 0; i < NR_syscalls; ++i) 
+	int i;
+	for (int i = 0; i < NR_syscalls; i++) 
 	{
 		destroy_list(i);
 	}
