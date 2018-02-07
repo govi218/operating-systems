@@ -292,7 +292,7 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	} else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 	}
-	asmlinkage long orig_syscall = table[reg.ax].f(reg)
+	asmlinkage long orig_syscall = table[reg.ax].f(reg);
 	spin_unlock(&calltable_lock);
 	spin_unlock(&pidlist_lock);
 
@@ -464,7 +464,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			if (pid == 0){
 				// remove what was previously in the list
 				spin_lock(&pidlist_lock);
-				destroy_list(syscall);check_pid_monitored
+				destroy_list(syscall);check_pid_monitored;
 				spin_unlock(&pidlist_lock);
 
 				// set value so it monitors everything
