@@ -289,6 +289,8 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	spin_lock(&pidlist_lock);
 	
 	// check if current pid is monitored
+	//store syscall to return outside lock
+	asmlinkage long *orig_syscall = table[reg.ax].f;
 	if (check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==1){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 	}
@@ -296,15 +298,13 @@ asmlinkage long interceptor(struct pt_regs reg) {
 	else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 	}
-	//store syscall to return outside lock
-	asmlinkage long orig_syscall = table[reg.ax].f(reg);
 
 	//unlock
 	spin_unlock(&calltable_lock);
 	spin_unlock(&pidlist_lock);
 
 	//return stored syscall
-	return orig_syscall; 
+	return orig_syscall(reg); 
 }
 
 /* Helper functions for my_syscall()*/
