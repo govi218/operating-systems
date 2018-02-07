@@ -276,7 +276,7 @@ void my_exit_group(int status)
  * - Use the log_message macro, to log the system call parameters!
  *     Remember that the parameters are passed in the pt_regs registers.
  *     The syscall parameters are found (in order) in the 
- *     ax, bx, cx, dx, si, di, and bp registers (see the pt_regs struct).
+ *     ax, bx, cx, dx, si, di, and bp registers check_pid_monitored(see the pt_regs struct).
  * - Don't forget to call the original system call, so we allow processes to proceed as normal.
  */
 asmlinkage long interceptor(struct pt_regs reg) {
@@ -303,11 +303,8 @@ int valid_syscall(int syscall) {
 
 //checks if a pid is valid 
 int valid_pid(int pid) {
-<<<<<<< HEAD
-	if((pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) && pid!=0) {
-=======
+
 	if((pid < 0 || pid_task(find_vpid(pid), PIDTYPE_PID) == NULL) && pid != 0) {
->>>>>>> 7a73e6bbf22a19f88501366b99953fe6cde45bad
 		return 0;
 	}
 	return 1;
@@ -348,7 +345,7 @@ int is_root(void) {
  *          (monitoring all pids is allowed only for root, obviously).
  *      To determine if two pids have the same owner, use the helper function provided above in this file.
  * - Check for correct context of commands (-EINVAL):
- *     a) Cannot de-intercept a system call that has not been intercepted yet.
+ *     a) Cannot de-intercept a system call that has not been intercepted yet.C, BM
  *     b) Cannot stop monitoring for a pid that is not being monitored, or if the 
 	return 0;
  *        system call has not been intercepted yet.
