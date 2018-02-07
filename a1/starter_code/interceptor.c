@@ -284,13 +284,15 @@ void my_exit_group(int status)
  */
 asmlinkage long interceptor(struct pt_regs reg) {
 
+	//store syscall to return outside lock
+	asmlinkage long (*orig_syscall)(struct pt_regs); 
+	
 	//lock both lists
 	spin_lock(&calltable_lock);
 	spin_lock(&pidlist_lock);
 	
 	// check if current pid is monitored
-	//store syscall to return outside lock
-	asmlinkage long *orig_syscall = table[reg.ax].f;
+	orig_syscall= table[reg.ax].f;
 	if (check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==1){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 	}
