@@ -284,18 +284,26 @@ void my_exit_group(int status)
  */
 asmlinkage long interceptor(struct pt_regs reg) {
 
-	// check if current pid is monitored
+	//lock both lists
 	spin_lock(&calltable_lock);
 	spin_lock(&pidlist_lock);
+	
+	// check if current pid is monitored
 	if (check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==1){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
-	} else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
+	}
+	//if pid isn't blacklisted and monitor is 2, log 
+	else if (!check_pid_monitored(reg.ax, current->pid) && table[reg.ax].monitored==2){
 		log_message(current->pid, reg.ax, reg.bx, reg.cx, reg.dx, reg.si, reg.di, reg.bp);
 	}
+	//store syscall to return outside lock
 	asmlinkage long orig_syscall = table[reg.ax].f(reg);
+
+	//unlock
 	spin_unlock(&calltable_lock);
 	spin_unlock(&pidlist_lock);
 
+	//return stored syscall
 	return orig_syscall; 
 }
 
@@ -321,7 +329,7 @@ int valid_pid(int pid) {
 //checks if the user associated with the process is root
 int is_root(void) {
 	if(current_uid() != 0) {
-		return 0;//valid_permissions
+		return 0;
 	}
 	return 1;
 }
@@ -378,16 +386,18 @@ int is_root(void) {
  */
 asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
+	//check if syscall is valid
 	if (!valid_syscall(syscall)){
 		return -EINVAL;
 	}
 
-	//lock and set r/w
+	//lock mytable and syscall table
 	spin_lock(&calltable_lock);
 	
 	switch(cmd)
 	{
 		case REQUEST_SYSCALL_INTERCEPT:
+
 			//check if root 
 			if (!is_root()){
 				spin_unlock(&calltable_lock);
@@ -401,6 +411,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				return -EBUSY;
 			}
 
+			//set call table to rw
 			set_addr_rw((unsigned long) sys_call_table);
 
 			//save original to table
@@ -409,7 +420,8 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			//intercept syscall
 			sys_call_table[syscall] = &interceptor;
             table[syscall].intercepted = 1;
-			//set ro and unlock
+
+			//set call table to ro
 			set_addr_ro((unsigned long) sys_call_table);
 			break;
 
@@ -420,12 +432,15 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				return -EPERM;
 			}
 
+			//set call table to rw
 			set_addr_rw((unsigned long) sys_call_table);
+
 			//check if process is not intercepted
 			if(table[syscall].intercepted == 0) {
 				spin_unlock(&calltable_lock);
 				return -EINVAL;
 			}
+
 			//restore original syscall
 			sys_call_table[syscall] = table[syscall].f;
 
@@ -435,6 +450,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			//unlock and set ro
 			set_addr_ro((unsigned long) sys_call_table);
 
+			//destroy list associated with syscall
 			spin_lock(&pidlist_lock);
 			destroy_list(syscall);
 			spin_unlock(&pidlist_lock);
@@ -454,30 +470,33 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				}
 			}
 
+			//check if pid is valid or intercepted already
 			if ( !valid_pid(pid) || table[syscall].intercepted !=1){
 				spin_unlock(&calltable_lock);
 				return -EINVAL;
 			}
 
-			//call the method that adds pid to syscall's monitored
-			//note: if pid is 0 do we have to manually add all unmonitored processes?
+			//if all pids are to be monitored
 			if (pid == 0){
 				// remove what was previously in the list
 				spin_lock(&pidlist_lock);
-				destroy_list(syscall);check_pid_monitored;
+				destroy_list(syscall);
 				spin_unlock(&pidlist_lock);
 
 				// set value so it monitors everything
 				table[syscall].monitored = 2;
 				
 
-			} else if (table[syscall].monitored != 2){
+			} 
+			//add pid regularly
+			else if (table[syscall].monitored != 2){
 			
 				table[syscall].monitored = 1;
 
 				//lock pidlist
 				spin_lock(&pidlist_lock);
 
+				//add if not already monitored
 				if (!check_pid_monitored(syscall, pid)){
 					int result = add_pid_sysc(pid, syscall);
 					if (result != 0){
@@ -491,10 +510,12 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 					return -EBUSY;
 				}
 				
-				//unlock
+				//unlock pidlist
 				spin_unlock(&pidlist_lock);
 
-			} else {
+			}
+			//maintain blacklist
+			else {
 				if (check_pid_monitored(syscall, pid)){
        				int result;
 					spin_lock(&pidlist_lock);
@@ -516,6 +537,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 
 		case REQUEST_STOP_MONITORING:
 
+			//check permissions
 			if (!is_root())
 			{
 				if (pid == 0 || check_pid_from_list(pid, current->pid) == -EPERM)
@@ -525,20 +547,22 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				}
 			}
 
+			//check if valid pid or already intercepted
 			if (!valid_pid(pid) || table[syscall].intercepted != 1){
 				spin_unlock(&calltable_lock);
 				return -EINVAL;
 			}
 
 			//call the method that adds pid to syscall's monitored
-			//note: if pid is 0 do we have to manually add all unmonitored processes?
 			if (pid == 0){
 				// remove what was previously in the list
 				spin_lock(&pidlist_lock);
 				destroy_list(syscall);
 				spin_unlock(&pidlist_lock);
 
-			} else if (table[syscall].monitored == 2){
+			} 
+			//add pid to blacklist
+			else if (table[syscall].monitored == 2){
 				//lock pidlist
 				spin_lock(&pidlist_lock);
 				if (!check_pid_monitored(syscall, pid)){
@@ -555,7 +579,9 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 				}
 				//unlock
 				spin_unlock(&pidlist_lock);
-			} else if (table[syscall].monitored == 1){
+			} 
+			//remove pid from list regularly
+			else if (table[syscall].monitored == 1){
 				//lock pidlist
 				int result;
 				spin_lock(&pidlist_lock);
@@ -573,6 +599,7 @@ asmlinkage long my_syscall(int cmd, int syscall, int pid) {
 			}
 
 	}
+	//unlock calltable
 	spin_unlock(&calltable_lock);
 	return 0;
 }
@@ -612,7 +639,7 @@ static int init_function(void) {
 	orig_exit_group = sys_call_table[__NR_exit_group];
 	sys_call_table[__NR_exit_group] = &my_exit_group;
 
-	//set back to read only and unlock table
+	//set back to read only
 	set_addr_ro((unsigned long) sys_call_table);
 
 
@@ -624,6 +651,8 @@ static int init_function(void) {
 		table[i].listcount = 0;
 		INIT_LIST_HEAD(&table[i].my_list);
 	}
+
+	//unlock table
 	spin_unlock(&calltable_lock);
 	return 7;
 }
@@ -649,7 +678,7 @@ static void exit_function(void)
 	sys_call_table[MY_CUSTOM_SYSCALL] = orig_custom_syscall;
 	sys_call_table[__NR_exit_group] = orig_exit_group;
 
-	//set to read only and unlock
+	//set to read only
 	set_addr_ro((unsigned long) sys_call_table);
 
 
@@ -659,6 +688,7 @@ static void exit_function(void)
 	{
 		destroy_list(i);
 	}
+	//unlock lists
 	spin_unlock(&pidlist_lock);
 	spin_unlock(&calltable_lock);
 }
