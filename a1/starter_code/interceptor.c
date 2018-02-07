@@ -598,7 +598,7 @@ static int init_function(void) {
 
 	//set back to read only and unlock table
 	set_addr_ro((unsigned long) sys_call_table);
-	spin_unlock(&calltable_lock);
+
 
 	//loop through all syscalls and initialize a mytable for each one
 	for (i = 0; i < NR_syscalls; ++i) 
@@ -608,7 +608,7 @@ static int init_function(void) {
 		table[i].listcount = 0;
 		INIT_LIST_HEAD(&table[i].my_list);
 	}
-
+	spin_unlock(&calltable_lock);
 	return 7;
 }
 
@@ -635,7 +635,7 @@ static void exit_function(void)
 
 	//set to read only and unlock
 	set_addr_ro((unsigned long) sys_call_table);
-	spin_unlock(&calltable_lock);
+
 
 	spin_lock(&pidlist_lock);
 	//destroy all lists for syscalls
@@ -644,6 +644,7 @@ static void exit_function(void)
 		destroy_list(i);
 	}
 	spin_unlock(&pidlist_lock);
+	spin_unlock(&calltable_lock);
 }
 
 module_init(init_function);
