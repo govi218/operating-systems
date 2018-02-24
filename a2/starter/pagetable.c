@@ -40,6 +40,9 @@ int allocate_frame(pgtbl_entry_t *p) {
 		// Write victim page to swap, if needed, and update pagetable
 		// IMPLEMENTATION NEEDED
 
+		//get the victim page from the replacement algorithm
+		pgtbl_entry_t *victim = coremap[frame].pte;
+		
 
 	}
 
@@ -136,16 +139,56 @@ char *find_physpage(addr_t vaddr, char type) {
 
 	// IMPLEMENTATION NEEDED
 	// Use top-level page directory to get pointer to 2nd-level page table
-	(void)idx; // To keep compiler happy - remove when you have a real use.
+	//(void)idx; // To keep compiler happy - remove when you have a real use.
 
+	// allocate a page table entry if it doesn't already exist
+	if(pgdir[idx].pde == 0) {
+		pgdir[idx] = init_second_level();
+	}
+	
+	// get 2nd level ptr
+	// rightshift to remove valid bit
+	uintptr_t pde_physpage = pgdir[idx].pde >> 1;
+	
 
 	// Use vaddr to get index into 2nd-level page table and initialize 'p'
+	unsigned pgtbl_idx = PGTBL_INDEX(vaddr);
 
-
-
+	// start at array beginning and add index of vaddr
+	p = pde_physpage + pgtbl_idx;
+	
 	// Check if p is valid or not, on swap or not, and handle appropriately
 
+	if(!(p->frame & PG_VALID) && !(p->frame & PG_ONSWAP)){
+		
+		// page table miss
+		miss_count ++;
 
+		// allocate and initialize
+		int p_frame = allocate_frame(p);
+		init_frame(p_frame, vaddr);
+
+	} else if (!(p->frame & PG_VALID) && p->frame & PG_ONSWAP){
+
+		// page table miss
+		miss_count ++;
+
+		// allocate frame and remove status bits
+		int p_frame = allocate_frame(p);
+		int p_frame_offset = p_frame >> PAGE_SHIFT;
+
+		// swap page in using provided method
+		if(swap_pagein(p_frame, p->swap_off) != 0){
+			perror("Swap page error");
+			exit(EXIT_FAILURE);
+		}
+
+		init_frame(p_frame, vaddr);
+
+	} else {
+		// page table hit
+		hit_count ++;
+	}
 
 	// Make sure that p is marked valid and referenced. Also mark it
 	// dirty if the access type indicates that the page will be written to.
