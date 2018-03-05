@@ -42,8 +42,19 @@ int allocate_frame(pgtbl_entry_t *p) {
 
 		//get the victim page from the replacement algorithm
 		pgtbl_entry_t *victim = coremap[frame].pte;
-		
 
+		// clean eviction
+		if !(victim->frame & PG_DIRTY){
+			evict_clean_count ++;
+		}
+		// dirty eviction 
+		else {
+			if((victim->swap_off = swap_pageout(frame, victim->swap_off)) == INVALID_SWAP){
+				perror("Swap page error");
+				exit(EXIT_FAILURE);
+			}
+			evict_dirty_count ++;
+		}
 	}
 
 	// Record information for virtual page that will now be stored in frame
@@ -168,6 +179,9 @@ char *find_physpage(addr_t vaddr, char type) {
 		int p_frame = allocate_frame(p);
 		init_frame(p_frame, vaddr);
 
+		// store the new frame
+		p->frame = p_frame << PAGE_SHIFT;
+
 	} else if (!(p->frame & PG_VALID) && p->frame & PG_ONSWAP){
 
 		// page table miss
@@ -183,7 +197,11 @@ char *find_physpage(addr_t vaddr, char type) {
 			exit(EXIT_FAILURE);
 		}
 
-		init_frame(p_frame, vaddr);
+		// store the new frame
+		p->frame = p_frame << PAGE_SHIFT;
+
+		// don't need to initialize since we're swapping already existing frame?
+		//init_frame(p_frame, vaddr);
 
 	} else {
 		// page table hit
@@ -193,7 +211,15 @@ char *find_physpage(addr_t vaddr, char type) {
 	// Make sure that p is marked valid and referenced. Also mark it
 	// dirty if the access type indicates that the page will be written to.
 
+	p->frame = p->frame | PG_VALID;
+	p->frame = p->frame | PG_REF;
 
+	// if access type is a write, ie. M for modify, S for store
+    if (type =='M' || type =='S'){
+		p->frame = p->frame | PG_DIRTY;
+	}
+
+	ref_count++;
 
 	// Call replacement algorithm's ref_fcn for this page
 	ref_fcn(p);
