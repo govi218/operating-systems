@@ -20,12 +20,13 @@ typedef struct node {
 } Node;
 
 Node* head = NULL;
+Node* tail = NULL;
 
-void printStack();
-void addToStack(int frame)
+void printList();
+void addToList(int frame)
 Node* findNode(int frame)
 
-void printStack(){
+void printList(){
 	Node* temp = head;
 	while (temp != NULL){
 		printf("%d", temp->frame);
@@ -33,7 +34,7 @@ void printStack(){
 	}
 }
 
-void addToStack(frame){
+void addToList(frame){
 	// create new node
 	Node* new_node = (Node*)malloc(sizeof(Node));
 	new_node->frame = frame;
@@ -42,6 +43,9 @@ void addToStack(frame){
 		head = new_node;
 		head->next = NULL;
 		head->prev = NULL;
+		tail = new_node;
+		tail->next = NULL;
+		tail->prev = NULL;
 	}
 	// else add to front
 	else {
@@ -76,13 +80,23 @@ int lru_evict() {
 	// is it possible to evict a frame if it hasn't been referenced yet??
 	//if (head != NULL)
 
+	// assuming list isn't empty
 	// get the most recent frame from head
 	Node* temp = head;
 	int return_frame = temp->frame;
 
-	// remove the temp node from head
-	head = temp->next;
-	head->prev = NULL;
+	// if its not the tail
+	if (temp->next != NULL){
+		// remove the temp node from head
+		head = temp->next;
+		head->prev = NULL;
+	}
+	// else its the tail 
+	else {
+		// set to null
+		head = NULL;
+		tail = NULL;
+	}
 	free(temp);
 
 	return return_frame;
@@ -98,17 +112,32 @@ void lru_ref(pgtbl_entry_t *p) {
 	temp = findNode(p->frame >> PAGE_SHIFT);
 	// if frame was added already
 	if (temp != NULL){
-		// move to front of stack
-		temp->prev->next = temp->next;
-		temp->next->prev = temp->prev;
-		temp->next = head;
-		temp->prev = NULL;
-		head = temp;
+		// move to front of stack, if the its not already at front of list
+		if (temp->prev != NULL){
+			// if the nodes is not the tail, move to front normally
+			if(temp->next != NULL){
+				temp->prev->next = temp->next;
+				temp->next->prev = temp->prev;
+				temp->next = head;
+				temp->prev = NULL;
+				head = temp;
+			}
+			// else its a tail, so move accordingly
+			else {
+				tail = temp->prev;
+				temp->next = head;
+				temp->prev = NULL;
+				head->prev = temp;
+				head->next = NULL;
+				head = temp;
+			}
+		}
+		
 	}
 	// else frame wasn't added yet
 	else {
 		// add to front of list
-		addToStack(p->frame >> PAGE_SHIFT);
+		addToList(p->frame >> PAGE_SHIFT);
 	}
 	return;
 }
