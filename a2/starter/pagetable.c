@@ -44,7 +44,7 @@ int allocate_frame(pgtbl_entry_t *p) {
 		pgtbl_entry_t *victim = coremap[frame].pte;
 
 		// clean eviction
-		if !(victim->frame & PG_DIRTY){
+		if (!(victim->frame & PG_DIRTY)) {
 			evict_clean_count ++;
 		}
 		// dirty eviction 

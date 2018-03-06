@@ -28,7 +28,7 @@ int clock_evict() {
 		if (frame_ref[current_frame]){
 			// dereference and move clock forward
 			frame_ref[current_frame] = 0;
-			current_frame++ 
+			current_frame++;
 		}
 		// not referenced 
 		else {
@@ -36,7 +36,7 @@ int clock_evict() {
 			frame_ref[current_frame] = 1;
 			// store the current frame the clock is on
 			return_frame = current_frame;
-			current_frame++ 
+			current_frame++;
 		}
 
 		//reset value so it goes back to first

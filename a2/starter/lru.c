@@ -23,10 +23,10 @@ Node* head = NULL;
 Node* tail = NULL;
 
 void printList();
-void addToList(int frame)
-Node* findNode(int frame)
+void addToList(int frame);
+Node* findNode(int frame);
 
-void printList(){
+void printList() {
 	Node* temp = head;
 	while (temp != NULL){
 		printf("%d", temp->frame);
