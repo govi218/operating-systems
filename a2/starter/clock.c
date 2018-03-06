@@ -11,8 +11,8 @@ extern int memsize;
 extern int debug;
 
 extern struct frame *coremap;
+int *frame_ref;
 
-int frame_ref[memsize];
 int current_frame = 0;
 
 /* Page to evict is chosen using the clock algorithm.
@@ -22,7 +22,7 @@ int current_frame = 0;
 
 int clock_evict() {
 	int return_frame = -1;
-
+	
 	while(return_frame == -1){
 		// referenced
 		if (frame_ref[current_frame]){
@@ -61,6 +61,10 @@ void clock_ref(pgtbl_entry_t *p) {
  * algorithm. 
  */
 void clock_init() {
+	// allocate adequate space for frame ref
+	
+	frame_ref = malloc(sizeof(int) * memsize);
+	
 	for(int i; i<memsize; i++){
 		frame_ref[i] = 0;
 	}
