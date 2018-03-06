@@ -62,7 +62,7 @@ void clock_ref(pgtbl_entry_t *p) {
  */
 void clock_init() {
 	// allocate adequate space for frame ref
-	
+
 	frame_ref = malloc(sizeof(int) * memsize);
 	
 	for(int i; i<memsize; i++){

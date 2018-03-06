@@ -34,7 +34,7 @@ void printList() {
 	}
 }
 
-void addToList(frame){
+void addToList(int frame){
 	// create new node
 	Node* new_node = (Node*)malloc(sizeof(Node));
 	new_node->frame = frame;

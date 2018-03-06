@@ -166,7 +166,7 @@ char *find_physpage(addr_t vaddr, char type) {
 	unsigned pgtbl_idx = PGTBL_INDEX(vaddr);
 
 	// start at array beginning and add index of vaddr
-	p = pde_physpage + pgtbl_idx;
+	p = (pgtbl_entry_t *)pde_physpage + pgtbl_idx;
 	
 	// Check if p is valid or not, on swap or not, and handle appropriately
 
@@ -189,7 +189,6 @@ char *find_physpage(addr_t vaddr, char type) {
 
 		// allocate frame and remove status bits
 		int p_frame = allocate_frame(p);
-		int p_frame_offset = p_frame >> PAGE_SHIFT;
 
 		// swap page in using provided method
 		if(swap_pagein(p_frame, p->swap_off) != 0){
