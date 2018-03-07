@@ -55,7 +55,7 @@ int allocate_frame(pgtbl_entry_t *p) {
 			}
 			evict_dirty_count ++;
 		}
-
+		// mark frame as not valid and on swap
 		victim->frame = victim->frame & ~PG_VALID;
 		victim->frame = victim->frame | PG_ONSWAP;
                
@@ -162,8 +162,7 @@ char *find_physpage(addr_t vaddr, char type) {
 	}
 	
 	// get 2nd level ptr
-	// rightshift to remove valid bit
-	//uintptr_t pde_physpage = pgdir[idx].pde >> 1;
+	// use page mask to get to remove status bits
         uintptr_t pde_physpage = (pgdir[idx].pde & PAGE_MASK);
 
 	// Use vaddr to get index into 2nd-level page table and initialize 'p'
