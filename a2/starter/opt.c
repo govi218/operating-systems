@@ -43,13 +43,13 @@ int opt_evict() {
 		}
 		// if frame wasn't found, then we can evict that frame
 		if (!found){
-			next_used = tf_list + 1;
-			return_frame = frame_mem_ref[i]
+			next_used = tf_size + 1;
+			return_frame = frame_mem_ref[i];
 		}
 		// otherwise, set as the frame to return, if it is used much later
 		else if (count > next_used){
 			next_used = count;
-			return_frame = frame_mem_ref[i]
+			return_frame = frame_mem_ref[i];
 		}
 	}
 	return return_frame;
@@ -94,7 +94,7 @@ void opt_init() {
 	tf_list = malloc(sizeof(addr_t)*tf_size);
 	addr_t vaddr;
 	char type;
-	int i = 0
+	int i = 0;
 	while(fgets(buf, MAXLINE, tfp) != NULL) {
 		if(buf[0] != '=') {
 			sscanf(buf, "%c %lx", &type, &vaddr);
