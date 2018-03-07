@@ -164,13 +164,13 @@ char *find_physpage(addr_t vaddr, char type) {
 	// get 2nd level ptr
 	// rightshift to remove valid bit
 	//uintptr_t pde_physpage = pgdir[idx].pde >> 1;
-        pgtbl_entry_t* pde_physpage = (pgtbl_entry_t *)(pgdir[idx].pde & PAGE_MASK);
+        uintptr_t pde_physpage = (pgdir[idx].pde & PAGE_MASK);
 
 	// Use vaddr to get index into 2nd-level page table and initialize 'p'
 	unsigned pgtbl_idx = PGTBL_INDEX(vaddr);
 
 	// start at array beginning and add index of vaddr
-	p = pde_physpage + pgtbl_idx;
+	p = (pgtbl_entry_t *)pde_physpage + pgtbl_idx;
 	
 	// Check if p is valid or not, on swap or not, and handle appropriately
 

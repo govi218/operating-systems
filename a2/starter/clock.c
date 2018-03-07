@@ -65,7 +65,7 @@ void clock_init() {
 
 	frame_ref = malloc(sizeof(int) * memsize);
 	
-	for(int i; i<memsize; i++){
+	for(int i = 0; i<memsize; i++){
 		frame_ref[i] = 0;
 	}
 }
