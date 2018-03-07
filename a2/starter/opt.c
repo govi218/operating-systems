@@ -20,14 +20,13 @@ addr_t *tf_list;
 int current_line = 0;
 int *frame_mem_ref;
 
-
 /* Page to evict is chosen using the optimal (aka MIN) algorithm. 
  * Returns the page frame number (which is also the index in the coremap)
  * for the page that is to be evicted.
  */
 int opt_evict() {
 
-	int return_frame = frame_mem_ref[0];
+	int return_frame = 0;
 	int next_used = 0;
 	// loop through each frame
 	for(int i = 0; i<memsize;i++){
@@ -44,12 +43,13 @@ int opt_evict() {
 		// if frame wasn't found, then we can evict that frame
 		if (!found){
 			next_used = tf_size + 1;
-			return_frame = frame_mem_ref[i];
+			return_frame = i;
+			break;
 		}
 		// otherwise, set as the frame to return, if it is used much later
 		else if (count > next_used){
 			next_used = count;
-			return_frame = frame_mem_ref[i];
+			return_frame = i;
 		}
 	}
 	return return_frame;
