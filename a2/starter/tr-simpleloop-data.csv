@@ -1,0 +1,41 @@
+Trace file: tr-simpleloop.ref
+Algorithm: fifo
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,70.8399,7220,2972,2922,208,2714
+100,72.9886,7439,2753,2653,45,2608
+150,73.3713,7478,2714,2564,16,2548
+200,73.4498,7486,2706,2506,12,2494
+
+
+Algorithm: lru
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,27.9533,2849,7343,7293,3848,3445
+100,71.1244,7249,2943,2843,237,2606
+150,74.0581,7548,2644,2494,0,2494
+200,74.0581,7548,2644,2444,0,2444
+
+
+Algorithm: clock
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,72.6354,7403,2789,2739,97,2642
+100,73.6754,7509,2683,2583,2,2581
+150,73.6852,7510,2682,2532,0,2532
+200,73.6951,7511,2681,2481,0,2481
+
+
+Algorithm: opt
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,73.3909,7480,2712,2662,28,2634
+100,73.9011,7532,2660,2560,2,2558
+150,70.0157,7136,3056,2906,0,2906
+200,70.0942,7144,3048,2848,0,2848
+
+
+Algorithm: rand
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,70.9282,7229,2963,2913,219,2694
+100,73.0181,7442,2750,2650,50,2600
+150,73.3222,7473,2719,2569,18,2551
+200,73.4792,7489,2703,2503,14,2489
+
+

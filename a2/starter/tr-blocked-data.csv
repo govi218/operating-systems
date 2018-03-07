@@ -1,0 +1,41 @@
+Trace file: tr-blocked.ref
+Algorithm: fifo
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,99.7318,2411571,6485,6435,4178,2257
+100,99.8211,2413730,4326,4226,2758,1468
+150,99.8255,2413836,4220,4070,2649,1421
+200,99.8689,2414885,3171,2971,1876,1095
+
+
+Algorithm: lru
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,0.1316,3183,2414873,2414823,1818915,595908
+100,26.3886,638091,1779965,1779865,1466766,313099
+150,32.0013,773810,1644246,1644096,1353952,290144
+200,45.4097,1098033,1320023,1319823,1058161,261662
+
+
+Algorithm: clock
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,99.7828,2412805,5251,5201,2859,2342
+100,99.8344,2414052,4004,3904,2618,1286
+150,99.8371,2414117,3939,3789,2574,1215
+200,99.8682,2414870,3186,2986,1927,1059
+
+
+Algorithm: opt
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,99.7674,2412431,5625,5575,2731,2844
+100,99.8184,2413664,4392,4292,1972,2320
+150,99.8509,2414451,3605,3455,1421,2034
+200,99.8651,2414794,3262,3062,1120,1942
+
+
+Algorithm: rand
+Memsize, Hit Rate, Hit Count, Miss Count, Overall Eviction Count, Clean Eviction Count, Dirty Eviction Count
+50,99.6531,2409667,8389,8339,5831,2508
+100,99.7834,2412818,5238,5138,3427,1711
+150,99.8187,2413672,4384,4234,2754,1480
+200,99.8407,2414203,3853,3653,2319,1334
+
+
