@@ -55,6 +55,10 @@ int allocate_frame(pgtbl_entry_t *p) {
 			}
 			evict_dirty_count ++;
 		}
+
+		victim->frame = victim->frame & ~PG_VALID;
+		victim->frame = victim->frame | PG_ONSWAP;
+               
 	}
 
 	// Record information for virtual page that will now be stored in frame
@@ -159,14 +163,14 @@ char *find_physpage(addr_t vaddr, char type) {
 	
 	// get 2nd level ptr
 	// rightshift to remove valid bit
-	uintptr_t pde_physpage = pgdir[idx].pde >> 1;
-	
+	//uintptr_t pde_physpage = pgdir[idx].pde >> 1;
+        pgtbl_entry_t* pde_physpage = (pgtbl_entry_t *)(pgdir[idx].pde & PAGE_MASK);
 
 	// Use vaddr to get index into 2nd-level page table and initialize 'p'
 	unsigned pgtbl_idx = PGTBL_INDEX(vaddr);
 
 	// start at array beginning and add index of vaddr
-	p = (pgtbl_entry_t *)pde_physpage + pgtbl_idx;
+	p = pde_physpage + pgtbl_idx;
 	
 	// Check if p is valid or not, on swap or not, and handle appropriately
 
@@ -182,7 +186,9 @@ char *find_physpage(addr_t vaddr, char type) {
 		// store the new frame
 		p->frame = p_frame << PAGE_SHIFT;
 
-	} else if (!(p->frame & PG_VALID) && p->frame & PG_ONSWAP){
+		p->frame = p->frame | PG_DIRTY;
+
+	} else if (!(p->frame & PG_VALID) && (p->frame & PG_ONSWAP)){
 
 		// page table miss
 		miss_count ++;
@@ -201,6 +207,9 @@ char *find_physpage(addr_t vaddr, char type) {
 
 		// don't need to initialize since we're swapping already existing frame?
 		//init_frame(p_frame, vaddr);
+		p->frame = p->frame & ~PG_DIRTY;
+		p->frame = p->frame & ~PG_ONSWAP;
+		
 
 	} else {
 		// page table hit
@@ -214,7 +223,7 @@ char *find_physpage(addr_t vaddr, char type) {
 	p->frame = p->frame | PG_REF;
 
 	// if access type is a write, ie. M for modify, S for store
-    if (type =='M' || type =='S'){
+    	if (type =='M' || type =='S'){
 		p->frame = p->frame | PG_DIRTY;
 	}
 
