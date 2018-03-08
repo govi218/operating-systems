@@ -4,8 +4,6 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include "pagetable.h"
-#include <stdbool.h>
-#include <string.h>
 
 
 extern int memsize;
@@ -23,7 +21,6 @@ typedef struct Node {
 
 Node* head = NULL;
 Node* tail = NULL;
-bool *contains;
 
 void printList();
 void addToList(int frame);
