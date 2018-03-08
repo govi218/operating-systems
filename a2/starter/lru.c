@@ -4,6 +4,8 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include "pagetable.h"
+#include <stdbool.h>
+#include <string.h>
 
 
 extern int memsize;
@@ -13,14 +15,15 @@ extern int debug;
 extern struct frame *coremap;
 
 // node for doubly linked list
-typedef struct node {
+typedef struct Node {
 	unsigned int frame;
-	struct node* next;
-	struct node* prev;
+	struct Node* next;
+	struct Node* prev;
 } Node;
 
 Node* head = NULL;
 Node* tail = NULL;
+bool *contains;
 
 void printList();
 void addToList(int frame);
@@ -28,24 +31,34 @@ Node* findNode(int frame);
 
 void printList() {
 	Node* temp = head;
+	printf("start of list\n");
 	while (temp != NULL){
-		printf("%d", temp->frame);
+		printf("%d->", temp->frame);
 		temp = temp->next;
 	}
+	printf("end of list\n");
+}
+
+void printReverseList() {
+	Node* temp = tail;
+	printf("start reverse of list\n");
+	while (temp != NULL){
+		printf("%d->", temp->frame);
+		temp = temp->prev;
+	}
+	printf("end of list\n");
 }
 
 void addToList(int frame){
 	// create new node
 	Node* new_node = (Node*)malloc(sizeof(Node));
 	new_node->frame = frame;
+	new_node->next = NULL;
+	new_node->prev = NULL;
 	// if head is null, set as head
 	if (head == NULL){
 		head = new_node;
-		head->next = NULL;
-		head->prev = NULL;
 		tail = new_node;
-		tail->next = NULL;
-		tail->prev = NULL;
 	}
 	// else add to front
 	else {
@@ -76,26 +89,23 @@ Node* findNode(int frame){
  */
 
 int lru_evict() {
-	
-	// is it possible to evict a frame if it hasn't been referenced yet??
-	//if (head != NULL)
 
 	// assuming list isn't empty
-	// get the most recent frame from head
-	Node* temp = head;
+	// get the least recent frame from tail
+	Node* temp = tail;
 	int return_frame = temp->frame;
-
-	// if its not the tail
-	if (temp->next != NULL){
-		// remove the temp node from head
-		head = temp->next;
-		head->prev = NULL;
-	}
-	// else its the tail 
-	else {
+	
+	// if its also the head, meaning only 1 item in list
+	if (temp->prev == NULL){
 		// set to null
 		head = NULL;
 		tail = NULL;
+	}
+	// else more than 1 item in list 
+	else {
+		// remove the temp node from tail
+		tail = temp->prev;
+		tail->next = NULL;
 	}
 	free(temp);
 
@@ -107,6 +117,7 @@ int lru_evict() {
  * Input: The page table entry for the page that is being accessed.
  */
 void lru_ref(pgtbl_entry_t *p) {
+	
 	Node* temp = NULL;
 	// look for frame in list
 	temp = findNode(p->frame >> PAGE_SHIFT);
@@ -114,12 +125,13 @@ void lru_ref(pgtbl_entry_t *p) {
 	if (temp != NULL){
 		// move to front of stack, if the its not already at front of list
 		if (temp->prev != NULL){
-			// if the nodes is not the tail, move to front normally
+			// if the node is not the tail, move to front normally
 			if(temp->next != NULL){
 				temp->prev->next = temp->next;
 				temp->next->prev = temp->prev;
 				temp->next = head;
 				temp->prev = NULL;
+				head->prev = temp;
 				head = temp;
 			}
 			// else its a tail, so move accordingly
@@ -128,17 +140,17 @@ void lru_ref(pgtbl_entry_t *p) {
 				temp->next = head;
 				temp->prev = NULL;
 				head->prev = temp;
-				head->next = NULL;
+				tail->next = NULL;
 				head = temp;
 			}
 		}
-		
 	}
 	// else frame wasn't added yet
 	else {
 		// add to front of list
 		addToList(p->frame >> PAGE_SHIFT);
 	}
+
 	return;
 }
 
