@@ -10,24 +10,26 @@
 
 unsigned char *disk;
 
-int main(int argc, char **argv) {
-    int aFlag = 0;
-
-    if (argc != 4 && argc != 3) {
-        printf("Usage: %s ext2_disk_name path [-a]\n", argv[0]);
-        return 0;
+int do_mkdir(char* disk_name, char* path) {
+    int fd = open(disk_name, O_RDWR);
+    disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if(disk = MAP_FAILED) {
+        perror("mmap failed");
+        exit(EXIT_FAILURE);
     }
+
     
-    if (argc == 4 && !(strcmp(argv[3], "-a") == 0)) {
-        printf("Usage: %s ext2_disk_name path [-a]\n", argv[0]);
+
+}
+
+int main(int argc, char **argv) {
+
+    if (argc != 3) {
+        printf("Usage: %s ext2_disk_name path\n", argv[0]);
         return 0;
     }
 
-    if (argc == 4) {
-        aFlag = 1;
-    }
-
-    int ret = do_ls(argv[1], argv[2], aFlag);
+    int ret = do_mkdir(argv[1], argv[2]);
 
     return ret;
 }
