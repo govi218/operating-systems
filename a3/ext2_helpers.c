@@ -1,10 +1,4 @@
-#include "ext2.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
-
+#include "ext2_helpers.h"
 
 unsigned int next_inode(char* disk) {
     struct ext2_super_block* sb = (struct ext2_super_block *)(disk + 1024);
@@ -39,16 +33,41 @@ unsigned int next_block(char* disk) {
     return -ENOMEM;
 }
 
-// inode* get_to_destination(char* disk, char[] path) {
-//     struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
+struct ext2_inode* search_for_subdirectory(unsigned char* disk, struct ext2_inode *cur_inode, char *sub_dir_name, unsigned int inode_tbl_size) {
+    struct ext2_dir_entry_2 *cur_dir_entry;
+    int sum_rec_len = 0; 
+
+    while(sum_rec_len < EXT2_BLOCK_SIZE) {
+        cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
+        sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
+        
+       // printf("%s: %d\n", cur_dir_entry->name, sum_rec_len);
+
+        if (strncmp(cur_dir_entry->name, sub_dir_name, cur_dir_entry->name_len) == 0 && strlen(cur_dir_entry->name) > 2) {
+            printf("yes %s: %d\n", cur_dir_entry->name, cur_dir_entry->inode);
+            return (struct ext2_inode *)(disk + inode_tbl_size*EXT2_BLOCK_SIZE + EXT2_INODE_SIZE*(cur_dir_entry->inode - 1));
+        } 
+    }
+
+    return cur_inode;
+}
+
+struct ext2_inode* go_to_destination(unsigned char* disk, char *path) {
+    char* cur_dir_name;
+
+    struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
+
+    // Get the root inode
+    struct ext2_inode *cur_inode = (struct ext2_inode *) (disk + gd->bg_inode_table * EXT2_BLOCK_SIZE + EXT2_INODE_SIZE);
     
-//     char* cur_dir;
+    cur_dir_name = strtok(path, "/");
+    while (cur_dir_name != NULL) {
+        //if(cur_inode->i_mode & EXT2_S_IFDIR) {
+        cur_inode = search_for_subdirectory(disk, cur_inode, cur_dir_name, gd->bg_inode_table);
+        //}
+        cur_dir_name = strtok(NULL, "/");
+    }
 
-//     cur_dir = strtok(path, "/");
+    return cur_inode;
+}
 
-//     while (cur_dir != NULL) {
-
-//         cur_dir = strtok(path, NULL);
-//     }
-
-// }

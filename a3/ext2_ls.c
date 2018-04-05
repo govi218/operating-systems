@@ -1,4 +1,5 @@
 #include "ext2.h"
+#include "ext2_helpers.h"
 
 int do_ls(char *ext2_disk_name, char *dir, int aFlag) {
     unsigned char *disk;    
@@ -13,11 +14,21 @@ int do_ls(char *ext2_disk_name, char *dir, int aFlag) {
 	    exit(1);
     }
 
-    struct ext2_group_desc *sb = (struct ext2_group_desc *)(disk + 2*1024);
-
-    printf("Inodes: %d\n", sb->bg_inode_table);
-    printf("Blocks: %d\n", sb->bg_inode_bitmap);
+   // struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
+    struct ext2_inode* cur_inode;
+    cur_inode = go_to_destination(disk, dir);
     
+    struct ext2_dir_entry_2 *cur_dir_entry;
+    int sum_rec_len = 0; 
+
+    while(sum_rec_len < EXT2_BLOCK_SIZE) {
+        cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
+        sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
+        char buf[EXT2_NAME_LEN + 1];
+        strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
+        buf[cur_dir_entry->name_len] = '\0';
+        printf("%s\n", buf);
+    }
 
     return 0;
 }
