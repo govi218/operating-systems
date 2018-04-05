@@ -38,3 +38,17 @@ unsigned int next_block(char* disk) {
     }
     return -ENOMEM;
 }
+
+// inode* get_to_destination(char* disk, char[] path) {
+//     struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
+    
+//     char* cur_dir;
+
+//     cur_dir = strtok(path, "/");
+
+//     while (cur_dir != NULL) {
+
+//         cur_dir = strtok(path, NULL);
+//     }
+
+// }
