@@ -41,10 +41,7 @@ struct ext2_inode* search_for_subdirectory(unsigned char* disk, struct ext2_inod
         cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
         sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
         
-       // printf("%s: %d\n", cur_dir_entry->name, sum_rec_len);
-
         if (strncmp(cur_dir_entry->name, sub_dir_name, cur_dir_entry->name_len) == 0 && strlen(cur_dir_entry->name) > 2) {
-            printf("yes %s: %d\n", cur_dir_entry->name, cur_dir_entry->inode);
             return (struct ext2_inode *)(disk + inode_tbl_size*EXT2_BLOCK_SIZE + EXT2_INODE_SIZE*(cur_dir_entry->inode - 1));
         } 
     }
@@ -62,9 +59,7 @@ struct ext2_inode* go_to_destination(unsigned char* disk, char *path) {
     
     cur_dir_name = strtok(path, "/");
     while (cur_dir_name != NULL) {
-        //if(cur_inode->i_mode & EXT2_S_IFDIR) {
         cur_inode = search_for_subdirectory(disk, cur_inode, cur_dir_name, gd->bg_inode_table);
-        //}
         cur_dir_name = strtok(NULL, "/");
     }
 
