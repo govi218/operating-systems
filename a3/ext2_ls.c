@@ -4,9 +4,7 @@
 int do_ls(char *ext2_disk_name, char *dir, int aFlag) {
     unsigned char *disk;    
     int fd; 
-    char dir_copy[10000];
-
-    strncpy(dir_copy, dir, strlen(dir));
+ 
     fd = open(ext2_disk_name, O_RDWR);
     
     disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -42,7 +40,7 @@ int do_ls(char *ext2_disk_name, char *dir, int aFlag) {
             }
         }
     } else if (cur_inode != NULL) {
-        printf("%s\n", dir_copy);
+        printf("%s\n", dir);
     }
     
     return 0;
