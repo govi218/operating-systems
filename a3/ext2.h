@@ -22,6 +22,15 @@
 
 #define EXT2_BLOCK_SIZE 1024
 
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/mman.h>
+
 /*
  * Structure of the super block
  */
