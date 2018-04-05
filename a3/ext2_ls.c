@@ -16,48 +16,56 @@ int do_ls(char *ext2_disk_name, char *dir, int aFlag) {
 	    exit(1);
     }
 
-   // struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
     struct ext2_inode* cur_inode;
     cur_inode = go_to_destination(disk, dir);
     
     struct ext2_dir_entry_2 *cur_dir_entry;
     int sum_rec_len = 0; 
 
+    if (cur_inode == NULL) {
+        printf("No such file or directory\n");        
+        return ENOENT;
+    }
+
     if(cur_inode->i_mode & EXT2_S_IFDIR) {
         while(sum_rec_len < EXT2_BLOCK_SIZE) {
             cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
             sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
+            
             char buf[EXT2_NAME_LEN + 1];
+            
             strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
             buf[cur_dir_entry->name_len] = '\0';
-            printf("%s\n", buf);
+            
+            if(aFlag || strlen(buf) > 2) {
+                printf("%s\n", buf);                
+            }
         }
     } else if (cur_inode != NULL) {
         printf("%s\n", dir_copy);
     }
-
-
+    
     return 0;
 }
 
 int main(int argc, char **argv) {
-    int aFlag = 0;
+    int ret;
 
     if (argc != 4 && argc != 3) {
-        printf("Usage: %s <ext2 disk image name> <path to file> [-a]\n", argv[0]);
+        printf("Usage: %s [-a] <ext2 disk image name> <path to file>\n", argv[0]);
         return 0;
     }
     
-    if (argc == 4 && !(strcmp(argv[3], "-a") == 0)) {
-        printf("Usage: %s <ext2 disk image name> <path to file> [-a]\n", argv[0]);
+    if (argc == 4 && !(strcmp(argv[1], "-a") == 0)) {
+        printf("Usage: %s [-a] <ext2 disk image name> <path to file>\n", argv[0]);
         return 0;
     }
 
     if (argc == 4) {
-        aFlag = 1;
+        ret = do_ls(argv[2], argv[3], 1);
+    } else {
+        ret = do_ls(argv[1], argv[2], 0);
     }
-
-    int ret = do_ls(argv[1], argv[2], aFlag);
 
     return ret;
 }   
