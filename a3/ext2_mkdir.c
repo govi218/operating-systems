@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include "ext2.h"
 
 unsigned char *disk;
@@ -39,15 +40,26 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         return EEXIST;
     }
 
-    // assign inode and update bmp
+    // assign inode and block; update respective bmp
     unsigned int new_dir_inode_num = next_inode(disk);
     update_inode_bmp(disk, new_dir_inode_num, 'a');
-
     struct ext2_inode* inode_tbl = (struct ext2_inode*) (disk + (gd->bg_inode_table * EXT2_BLOCK_SIZE));
     struct ext2_inode* new_dir_inode = &(inode_tbl[new_dir_inode_num - 1]);
-
     unsigned int new_dir_block_num = next_block(disk);
     update_block_bmp(disk, new_dir_block_num, 'a');
+
+    //set inode properties
+    new_dir_inode->i_mode = EXT2_S_IFDIR;
+    new_dir_inode->i_size = EXT2_BLOCK_SIZE;
+    new_dir_inode->i_blocks = 2;
+    new_dir_inode->i_block[0] = new_dir_block_num;
+    for(int i = 1; i < 15; i++) {
+        new_dir_inode->i_block[i] = 0;
+    }
+
+    //create dir entry structure for new dir
+    struct ext2_dir_entry_2* new_dir = (struct ext2_dir_entry_2*) (disk + (new_dir_block_num * EXT2_BLOCK_SIZE));
+    new_dir->inode = new_dir_inode_num;
 
 
 }
