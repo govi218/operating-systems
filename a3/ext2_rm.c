@@ -16,9 +16,6 @@ int do_rm(char *ext2_disk_name, char *dir) {
 
     struct ext2_inode* cur_inode;
     cur_inode = go_to_destination(disk, dir);
-    
-    struct ext2_dir_entry_2 *cur_dir_entry;
-    int sum_rec_len = 0; 
 
     if (cur_inode == NULL) {
         printf("No such file or directory\n");        
@@ -29,21 +26,41 @@ int do_rm(char *ext2_disk_name, char *dir) {
         printf("Not a regular file\n");
         return EISDIR;
 
-    } else if (cur_inode != NULL) {
+    } else if (cur_inode != NULL) { 
+        char *file_name = strrchr(dir, '/');
+        char parent_dir[strlen(dir) - strlen(file_name)]; 
+        
+        if (file_name != NULL) {
+            file_name = file_name + 1;
+        }
+
+        strncpy(parent_dir, dir, strlen(dir) - strlen(file_name));
+        parent_dir[strlen(dir) - strlen(file_name)-1] = '\0';        
+        printf("%s\n", parent_dir);
+
+        cur_inode = go_to_destination(disk, parent_dir);
+        
+        struct ext2_dir_entry_2 *prev_dir_entry;
+        struct ext2_dir_entry_2 *cur_dir_entry;        
+        int sum_rec_len = 0; 
+        
         while(sum_rec_len < EXT2_BLOCK_SIZE) {
+            prev_dir_entry = cur_dir_entry; 
             cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
             sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
-            
-            char buf[EXT2_NAME_LEN + 1];
-            
+
+            char buf[EXT2_NAME_LEN + 1];            
             strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
             buf[cur_dir_entry->name_len] = '\0';
             
-            if (strcmp(buf, dir) == 0) {
-               
-               
-                // REMOVE CODE IN HERE
-                printf("%s\n", buf);                
+            if (strcmp(buf, file_name) == 0) {
+                struct ext2_inode * del_inode = (struct ext2_inode *)(disk + (1024*5) + (128*(cur_dir_entry->inode -1)));
+                
+                del_inode->i_links_count--;
+                
+                prev_dir_entry -> rec_len += cur_dir_entry -> rec_len; 
+                
+                break;
             }
         }        
     }
