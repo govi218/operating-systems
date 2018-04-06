@@ -132,7 +132,7 @@ void * getParentDirectory(char *parentDir, char *imgFilePath){
     while (imgFilePath[i] != '/') {
         i--;
     }
-    strncpy(parentDir, imgFilePath, i) - 1;
+    strncpy(parentDir, imgFilePath, i - 1);
 
     if (i > 0){
         imgFilePath[i]='\0';
@@ -140,4 +140,3 @@ void * getParentDirectory(char *parentDir, char *imgFilePath){
         imgFilePath[i+1]='\0';
     }
 }
-
