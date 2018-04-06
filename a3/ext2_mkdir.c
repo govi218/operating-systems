@@ -39,7 +39,16 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         return EEXIST;
     }
 
-    
+    // assign inode and update bmp
+    unsigned int new_dir_inode_num = next_inode(disk);
+    update_inode_bmp(disk, new_dir_inode, 'a');
+
+    struct ext2_inode* inode_tbl = (struct ext2_inode*) (disk + (gd->bg_inode_table * EXT2_BLOCK_SIZE));
+    struct ext2_inode* new_dir_inode = &(inode_tbl[new_dir_inode_num - 1]);
+
+    unsigned int new_dir_block_num = next_block(disk);
+    update_block_bmp(disk, new_dir_block, 'a');
+
 
 }
 
