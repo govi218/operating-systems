@@ -33,44 +33,6 @@ unsigned int next_block(char* disk) {
     return -ENOMEM;
 }
 
-void update_inode_bmp(unsigned char* disk, unsigned int inode_num, char mod) {
-    struct ext2_super_block* sb = (struct ext2_super_block*)(disk + EXT2_BLOCK_SIZE);
-    struct ext2_group_desc* gd = (struct ext2_group_desc*)(disk + 2 * EXT2_BLOCK_SIZE);
-    
-    char* inode_bmp = (char*) (disk + gd->bg_inode_bitmap * EXT2_BLOCK_SIZE);
-    
-    if(mod == 'a') {
-        sb->s_free_inodes_count --;
-        inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] | (1 << (inode_num - 1) % 8);
-    } else if(mod == 'd') {
-        sb->s_free_inodes_count ++;
-        inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] & ~(1 << (inode_num - 1) % 8);
-    } else {
-        printf("FAILURE\n");
-        exit(EXIT_FAILURE);
-    }
-    
-}
-
-void update_block_bmp(unsigned char* disk, unsigned int block_num, char mod) {
-    struct ext2_super_block* sb = (struct ext2_super_block*)(disk + EXT2_BLOCK_SIZE);
-    struct ext2_group_desc* gd = (struct ext2_group_desc*)(disk + 2 * EXT2_BLOCK_SIZE);
-    
-    char* block_bmp = (char*) (disk + gd->bg_block_bitmap * EXT2_BLOCK_SIZE);
-    
-    if(mod == 'a') {
-        sb->s_free_blocks_count --;
-        block_bmp[(block_num - 1) / 8] = block_bmp[(block_num - 1) / 8] | (1 << (block_num - 1) % 8);
-    } else if(mod == 'd') {
-        sb->s_free_blocks_count ++;
-        block_bmp[(block_num - 1) / 8] = block_bmp[(block_num - 1) / 8] & ~(1 << (block_num - 1) % 8);
-    } else {
-        printf("FAILURE\n");
-        exit(EXIT_FAILURE);
-    }
-    
-}
-
 /*
 Searches the directory for a given filename. If it doesnt exist NULL is returned
 */
@@ -121,4 +83,5 @@ struct ext2_inode* go_to_destination(unsigned char* disk, char *path) {
     
     return cur_inode;
 }
+
 
