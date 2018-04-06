@@ -127,7 +127,7 @@ struct ext2_inode* go_to_destination(unsigned char* disk, char *path) {
 /*
 Get the parent directory from file path
 */
-void * getParentDirectory(char *parentDir, char *imgFilePath){
+void getParentDirectory(char *parentDir, char *imgFilePath){
     int i = strlen(imgFilePath) - 1;
     while (imgFilePath[i] != '/') {
         i--;
