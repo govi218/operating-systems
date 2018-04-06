@@ -1,6 +1,6 @@
 #include "ext2_helpers.h"
 
-unsigned int next_inode(char* disk) {
+unsigned int next_inode(unsigned char* disk) {
     struct ext2_super_block* sb = (struct ext2_super_block *)(disk + 1024);
     if(sb->s_free_inodes_count > 0) {
         struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
@@ -17,7 +17,7 @@ unsigned int next_inode(char* disk) {
 }
 
 
-unsigned int next_block(char* disk) {
+unsigned int next_block(unsigned char* disk) {
     struct ext2_super_block* sb = (struct ext2_super_block *)(disk + 1024);
     if(sb->s_free_blocks_count > 0) {
         struct ext2_group_desc *gd = (struct ext2_group_desc *)(disk + 2*1024);
