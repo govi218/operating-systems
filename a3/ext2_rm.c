@@ -28,14 +28,14 @@ int do_rm(char *ext2_disk_name, char *dir) {
 
     } else if (cur_inode != NULL) { 
         char *file_name = strrchr(dir, '/');
-        char parent_dir[strlen(dir) - strlen(file_name)]; 
         
         if (file_name != NULL) {
             file_name = file_name + 1;
         }
 
+        char parent_dir[strlen(dir) - strlen(file_name) - 1];         
         strncpy(parent_dir, dir, strlen(dir) - strlen(file_name));
-        parent_dir[strlen(dir) - strlen(file_name)-1] = '\0';        
+        parent_dir[strlen(dir) - strlen(file_name) - 1] = '\0';        
         printf("%s\n", parent_dir);
 
         cur_inode = go_to_destination(disk, parent_dir);
@@ -43,24 +43,33 @@ int do_rm(char *ext2_disk_name, char *dir) {
         struct ext2_dir_entry_2 *prev_dir_entry;
         struct ext2_dir_entry_2 *cur_dir_entry;        
         int sum_rec_len = 0; 
-        
-        while(sum_rec_len < EXT2_BLOCK_SIZE) {
-            prev_dir_entry = cur_dir_entry; 
-            cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[0])*EXT2_BLOCK_SIZE) + sum_rec_len);        
-            sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
+        for (int i = 0; i < 12; i++) {
+            if (cur_inode->i_block[i] == 0) {
+                break; 
+            }
+            while(sum_rec_len < EXT2_BLOCK_SIZE) {
+                prev_dir_entry = cur_dir_entry; 
+                cur_dir_entry = (struct ext2_dir_entry_2 *)(disk + ((cur_inode->i_block[i])*EXT2_BLOCK_SIZE) + sum_rec_len);        
+                sum_rec_len = sum_rec_len + cur_dir_entry->rec_len;
+    
+                char buf[EXT2_NAME_LEN + 1];            
+                strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
+                buf[cur_dir_entry->name_len] = '\0';
+                printf("%s\n", buf);
+                
+                if (strcmp(buf, file_name) == 0) {
+                    struct ext2_inode * del_inode = (struct ext2_inode *)(disk + (1024*5) + (128*(cur_dir_entry->inode -1)));
+                    
+                    update_inode_bmp(disk, cur_dir_entry->inode,'d');
+                    del_inode->i_links_count--;
 
-            char buf[EXT2_NAME_LEN + 1];            
-            strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
-            buf[cur_dir_entry->name_len] = '\0';
-            
-            if (strcmp(buf, file_name) == 0) {
-                struct ext2_inode * del_inode = (struct ext2_inode *)(disk + (1024*5) + (128*(cur_dir_entry->inode -1)));
-                
-                del_inode->i_links_count--;
-                
-                prev_dir_entry -> rec_len += cur_dir_entry -> rec_len; 
-                
-                break;
+                    if (del_inode->i_links_count == 0) {
+                       update_block_bmp(disk, cur_inode->i_block[i],'d');
+                    }
+                    
+                    prev_dir_entry -> rec_len += cur_dir_entry -> rec_len; 
+                    break;
+                }
             }
         }        
     }

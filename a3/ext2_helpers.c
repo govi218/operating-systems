@@ -40,16 +40,15 @@ void update_inode_bmp(unsigned char* disk, unsigned int inode_num, char mod) {
     char* inode_bmp = (char*) (disk + gd->bg_inode_bitmap * EXT2_BLOCK_SIZE);
     
     if(mod == 'a') {
-        sb->s_free_inodes_count --;
+        sb->s_free_inodes_count--;
         inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] | (1 << (inode_num - 1) % 8);
     } else if(mod == 'd') {
-        sb->s_free_inodes_count ++;
+        sb->s_free_inodes_count++;
         inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] & ~(1 << (inode_num - 1) % 8);
     } else {
         printf("FAILURE\n");
         exit(EXIT_FAILURE);
     }
-    
 }
 
 void update_block_bmp(unsigned char* disk, unsigned int block_num, char mod) {
