@@ -40,16 +40,15 @@ void update_inode_bmp(unsigned char* disk, unsigned int inode_num, char mod) {
     char* inode_bmp = (char*) (disk + gd->bg_inode_bitmap * EXT2_BLOCK_SIZE);
     
     if(mod == 'a') {
-        sb->s_free_inodes_count --;
+        sb->s_free_inodes_count--;
         inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] | (1 << (inode_num - 1) % 8);
     } else if(mod == 'd') {
-        sb->s_free_inodes_count ++;
+        sb->s_free_inodes_count++;
         inode_bmp[(inode_num - 1) / 8] = inode_bmp[(inode_num - 1) / 8] & ~(1 << (inode_num - 1) % 8);
     } else {
         printf("FAILURE\n");
         exit(EXIT_FAILURE);
     }
-    
 }
 
 void update_block_bmp(unsigned char* disk, unsigned int block_num, char mod) {
@@ -129,14 +128,15 @@ Get the parent directory from file path
 */
 void getParentDirectory(char *parentDir, char *imgFilePath){
     int i = strlen(imgFilePath) - 1;
-    while (imgFilePath[i] != '/') {
+    
+    while (imgFilePath[i] != '/' && i != 0) {
         i--;
     }
-    strncpy(parentDir, imgFilePath, i - 1);
-
-    if (i > 0){
-        imgFilePath[i]='\0';
-    } else{
-        imgFilePath[i+1]='\0';
+    if(i == 0) {
+        strncpy(parentDir, ".", 1);        
+    } else {
+        strncpy(parentDir, imgFilePath, i);   
     }
+    
+    parentDir[i+1]='\0';    
 }
