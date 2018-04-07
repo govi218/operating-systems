@@ -14,7 +14,7 @@ int do_ln(char *ext2_disk_name, char *dir1, char* dir2, int flag) {
 	    exit(1);
     }
     struct ext2_inode* cur_inode;
-    cur_inode1_parent = go_to_destination(disk, dir1);
+    cur_inode1_parent = go_to_destination(disk, dir1); //existing 
     cur_inode2_parent = go_to_destination(disk, dir2);
     
     if (cur_inode1_parent == NULL || dir[0] != '.' || cur_inode2_parent == NULL) {
@@ -28,7 +28,7 @@ int do_ln(char *ext2_disk_name, char *dir1, char* dir2, int flag) {
 
     } else if (cur_inode1_parent != NULL && cur_inode2_parent != NULL) { 
         char parent_dir[256];        
-        char *file_name = strrchr(dir, '/');
+        char *file_name = strrchr(dir2, '/');
         
         
         if (file_name != NULL) {
@@ -37,10 +37,10 @@ int do_ln(char *ext2_disk_name, char *dir1, char* dir2, int flag) {
             file_name = dir;
         }      
         
-        getParentDirectory(parent_dir, dir);
+        getParentDirectory(parent_dir, dir2);
         
 
-        cur_inode1 = go_to_destination(disk, ".");
+        cur_inode2 = go_to_destination(disk, ".");
         
         // cur_inode2 = go_to_destination(disk, ".");
         
@@ -57,12 +57,18 @@ int do_ln(char *ext2_disk_name, char *dir1, char* dir2, int flag) {
             buf[cur_dir_entry->name_len] = '\0';
             
             if (strcmp(buf, file_name) == 0) {
-    
-               
+            /*
+                1) Create a new directory entry, and set its file_type to either
+                    symlink or hardlink depending on the mode. 
+                2) Set the new files inode to be the inode of the file that you are
+                    trying to link to. If it's a hardlink. 
+                3) If it's a symlink then set the data of the new directory entry to 
+                    be the path to the file you are trying to link to.
+            */
             }
         }        
     }
-    
+
     return 0;
 }
 

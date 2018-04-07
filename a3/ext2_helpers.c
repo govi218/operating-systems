@@ -141,6 +141,7 @@ void getParentDirectory(char *parentDir, char *imgFilePath){
     if (i == 0) {
         parentDir[i+1]='\0';         
     }
+    
     else {
         parentDir[i]='\0';         
     }
