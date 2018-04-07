@@ -29,8 +29,9 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
     struct ext2_inode* cur_inode;
     cur_inode = go_to_destination(disk, dir);
     
-    struct ext2_dir_entry_2 *cur_dir_entry;
-    int sum_rec_len = 0; 
+    // struct ext2_dir_entry_2 *cur_dir_entry;
+    // int sum_rec_len = 0; 
+    // struct ext2_dir_entry_2 *prev_dir_entry;    
 
     if (cur_inode == NULL) {
         printf("No such file or directory\n");        
@@ -38,11 +39,11 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
     }
 
     if (search_for_subdirectory(disk, cur_inode, dir, gd->bg_inode_table) != NULL) {
-        printf("failure\n");
+        printf("Already exists\n");
         return EEXIST;
     }
 
-    char *parent_path;
+    char parent_path[256];
     getParentDirectory(parent_path, dir);
     
     if (strlen(dir) - strlen(parent_path) > EXT2_NAME_LEN) {
@@ -77,7 +78,7 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         printf("failure?\n");
     unsigned int parent_inode_num;
     for (i = 0; i < 31; i++) {
-        if(cur_inode = &(inode_tbl[i])) {
+        if(cur_inode == &(inode_tbl[i])) {
             parent_inode_num = i;
             break;
         }
@@ -98,7 +99,7 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         printf("failure??\n");
     //create a dir record for new dir in parent
     cur_inode->i_links_count ++;
-    struct ext2_dir_entry_2 *prev_dir_entry;    
+
     for (i = 0; i < 12; i++) {
         if (cur_inode->i_block[i] == 0) {
             cur_inode->i_block[i] = next_block(disk);
