@@ -16,8 +16,8 @@ int do_rm(char *ext2_disk_name, char *dir) {
 
     struct ext2_inode* cur_inode;
     cur_inode = go_to_destination(disk, dir);
-
-    if (cur_inode == NULL) {
+    
+    if (cur_inode == NULL || dir[0] != '.') {
         printf("No such file or directory\n");        
         return ENOENT;
     }
