@@ -25,20 +25,20 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
     rewind(fp);
 
     //check if parent directory exists
-    char parentDir[256];
+    /*char parentDir[256];
     getParentDirectory(parentDir, imgdir);
     struct ext2_inode* pd_inode;
     pd_inode = go_to_destination(disk, parentDir);
     if (pd_inode == NULL){
         printf("Parent directory does not exist\n");        
         return ENOENT;
-    }
+    }*/
 
     // check if file on disk exists
     struct ext2_inode* cur_inode;
     cur_inode = go_to_destination(disk, imgdir);
     if (cur_inode == NULL) {
-        printf("File on image disk does not exist\n");        
+        printf("Destination on image disk does not exist\n");        
         return ENOENT;
     }
 
@@ -48,7 +48,7 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
     update_inode_bmp(disk, freeInodeNum, 'a');
 
     // create new i_node for file
-    struct ext2_inode *new_inode = (struct ext2_inode *)(disk + (EXT2_BLOCK_SIZE) + (EXT2_INODE_SIZE*freeInodeNum));
+    struct ext2_inode *new_inode = (struct ext2_inode *)(disk + (EXT2_BLOCK_SIZE*5) + (EXT2_INODE_SIZE*freeInodeNum));
 
     new_inode -> i_mode = EXT2_S_IFREG;
     new_inode  -> i_size = file_length;
@@ -75,25 +75,55 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
 
     // new dir
     struct ext2_dir_entry_2 * curr_dir_entry;
-    for (int i = 0; i < (pd_inode -> i_blocks)/2 && i<12; i ++){
-        curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(pd_inode->i_block[i])));
+
+    // gt last dir entry
+    int index;
+    if ((cur_inode -> i_blocks)/2) > 11 && ){
+        index = 11;
+    } else {
+        index = (cur_inode -> i_blocks)/2;
+    }
+    curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])));
+    int curr_size = curr_dir_entry -> rec_len;
+    int prev_size = 0;
+
+    while(curr_size < EXT2_BLOCK_SIZE){
+        curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])) + curr_size);
+        prev_size = curr_size;
+        curr_size += curr_dir_entry->rec_len;
+    }
+     
+
+    char *file_name = strrchr(imgdir, '/');
+    if (file_name != NULL) {
+        file_name = file_name + 1;
     }
 
-    if (pd_inode->i_block[i]){
+    int curr_dir_len = 8 + curr_dir_entry->name_len + (4 - (curr_dir_entry->name_len%4));
+    int req_len = 8 + strlen(file_name) + (4 - (strlen(file_name)%4));
 
-        char *file_name = strrchr(imgdir, '/');
-        if (file_name != NULL) {
-            file_name = file_name + 1;
-        }
-
-        int prev_dir_size = sizeof(struct ext2_dir_entry_2) + curr_dir_entry->name_len + (curr_dir_entry->name_len%4);
-        struct ext2_dir_entry_2 * new_dir_entry;
-        new_dir_entry = (struct ext2_dir_entry_2 *)((char *)curr_dir_entry + prev_dir_size);
+    // if enough space if block, add new directory entry here
+    if (req_len < curr_dir_entry -> rec_len){
+        curr_dir_entry -> rec_len = curr_dir_len;
+        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index-1])) + prev_size+curr_dir_len);
         new_dir_entry -> inode = freeInodeNum;
         new_dir_entry -> name_len = strlen(file_name);
-        new_dir_entry -> file_type = EXT2_FT_DIR;
+        new_dir_entry -> file_type = EXT2_FT_REG_FILE;
         strncpy(new_dir_entry -> name, file_name, strlen(file_name));
-        new_dir_entry -> rec_len = curr_dir_entry->rec_len - prev_dir_size;
+        new_dir_entry -> rec_len = EXT2_BLOCK_SIZE - (prev_size+curr_dir_len)
+
+    } else {
+
+        unsigned int free_block_num = next_block(disk);
+        update_block_bmp(disk, free_block_num, 'a');
+
+        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])) + prev_size+curr_dir_len);
+        new_dir_entry -> inode = free_block_num;
+        new_dir_entry -> name_len = strlen(file_name);
+        new_dir_entry -> file_type = EXT2_FT_REG_FILE;
+        strncpy(new_dir_entry -> name, file_name, strlen(file_name));
+        new_dir_entry -> rec_len = EXT2_BLOCK_SIZE;
+
     }
 
     fclose(fp);
