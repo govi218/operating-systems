@@ -73,26 +73,33 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
         fread(block, sizeof(char), EXT2_BLOCK_SIZE/sizeof(char), fp);
     }
 
-    // new dir
+    int count = (cur_inode -> i_blocks)/2;
+    if (count > 11){
+        count = 11;
+    }
+
+    
+    // get last block
     struct ext2_dir_entry_2 * curr_dir_entry;
-
-    // gt last dir entry
-    int index;
-    if (((cur_inode -> i_blocks)/2) > 11){
-        index = 11;
-    } else {
-        index = (cur_inode -> i_blocks)/2;
+    int j;
+    for (j = 0; j < count; j++){
+        curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[j])));
     }
-    curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])));
-    int curr_size = curr_dir_entry -> rec_len;
+    printf("fsfs  %d\n", j);
+    int sum_len = 0;
     int prev_size = 0;
-
-    while(curr_size < EXT2_BLOCK_SIZE){
-        curr_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])) + curr_size);
-        prev_size = curr_size;
-        curr_size += curr_dir_entry->rec_len;
+    int rec_len;
+    
+    // get last directory entry
+    while(sum_len < EXT2_BLOCK_SIZE){
+        
+        curr_dir_entry = (void *)curr_dir_entry + rec_len;
+        rec_len = curr_dir_entry -> rec_len;
+        printf("loop %d\n", sum_len);
+        prev_size = sum_len;
+        sum_len += rec_len;
     }
-     
+    printf("does it break\n");
 
     char *file_name = strrchr(imgdir, '/');
     if (file_name != NULL) {
@@ -105,7 +112,7 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
     // if enough space if block, add new directory entry here
     if (req_len < curr_dir_entry -> rec_len){
         curr_dir_entry -> rec_len = curr_dir_len;
-        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index-1])) + prev_size+curr_dir_len);
+        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[j-1])) + prev_size+curr_dir_len);
         new_dir_entry -> inode = freeInodeNum;
         new_dir_entry -> name_len = strlen(file_name);
         new_dir_entry -> file_type = EXT2_FT_REG_FILE;
@@ -117,7 +124,7 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
         unsigned int free_block_num = next_block(disk);
         update_block_bmp(disk, free_block_num, 'a');
 
-        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[index])) + prev_size+curr_dir_len);
+        struct ext2_dir_entry_2 * new_dir_entry = (struct ext2_dir_entry_2 *)(disk + (EXT2_BLOCK_SIZE*(cur_inode->i_block[j])) + prev_size+curr_dir_len);
         new_dir_entry -> inode = free_block_num;
         new_dir_entry -> name_len = strlen(file_name);
         new_dir_entry -> file_type = EXT2_FT_REG_FILE;
