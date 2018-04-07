@@ -57,11 +57,25 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         new_dir_inode->i_block[i] = 0;
     }
 
-    //create dir entry structure for new dir
+    //create dir entry for new dir
     struct ext2_dir_entry_2* new_dir = (struct ext2_dir_entry_2*) (disk + (new_dir_block_num * EXT2_BLOCK_SIZE));
     new_dir->inode = new_dir_inode_num;
+    new_dir->file_type = EXT2_FT_DIR;
+    new_dir->rec_len = sizeof(struct ext2_dir_entry_2) + 4;
+    new_dir->name_len = 1;
+    strncpy(new_dir->name, ".", 1);
 
+    //create dir entry for parent
+    struct ext2_dir_entry_2* parent_dir = (struct ext2_dir_entry_2*) new_dir + new_dir->rec_len;
+    parent_dir->inode = cur_inode;
+    parent_dir->file_type = EXT2_FT_DIR;
+    parent_dir->rec_len = sizeof(struct ext2_dir_entry_2) + 4;
+    parent_dir->name_len = 2;
+    strncpy(new_dir->name, "..", 2);
 
+    //create a dir record for new dir in parent
+    cur_inode->i_links_count ++;
+    
 }
 
 int main(int argc, char **argv) {
