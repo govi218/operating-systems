@@ -144,6 +144,4 @@ void getParentDirectory(char *parentDir, char *imgFilePath){
     else {
         parentDir[i]='\0';         
     }
-    
-    printf("asdf: %s\n", parentDir);
 }   
