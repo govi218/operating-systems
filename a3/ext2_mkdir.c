@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <time.h>
 #include "ext2.h"
+#include "ext2_helpers.h"
 
 unsigned char *disk;
 
@@ -40,7 +41,10 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         return EEXIST;
     }
 
-    if (strlen(dir) - strlen(getParentDirectory(dir)) > EXT2_NAME_LEN) {
+    char *parent_path;
+    getParentDirectory(parent_path, dir);
+    
+    if (strlen(dir) - strlen(parent_path) > EXT2_NAME_LEN) {
         printf("Name can be max %d characters\n", EXT2_NAME_LEN);
         exit(EXIT_FAILURE);
     }
@@ -80,7 +84,7 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
 
     //get name of new dir
     char[EXT2_NAME_LEN] new_dir_name;
-    int idx = strlen(getParentDirectory(dir)) - 1, EXT2_NAME_LEN - 1;
+    int idx = strlen(parent_path) - 1, EXT2_NAME_LEN - 1;
     strncpy(new_dir_name, dir[idx], EXT2_NAME_LEN - 1);
 
     //create a dir record for new dir in parent
