@@ -40,7 +40,7 @@ int do_rm(char *ext2_disk_name, char *dir) {
         getParentDirectory(parent_dir, dir);
         
 
-        cur_inode = go_to_destination(disk, ".");
+        cur_inode = go_to_destination(disk, parent_dir);
         
         struct ext2_dir_entry_2 *prev_dir_entry;
         struct ext2_dir_entry_2 *cur_dir_entry;        
