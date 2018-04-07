@@ -45,7 +45,6 @@ int do_mkdir(char* ext2_disk_name, char* dir) {
         printf("Already exists\n");
         return EEXIST;
     }
-
     
     if (strlen(dir) - strlen(parent_path) > EXT2_NAME_LEN) {
         printf("Name can be max %d characters\n", EXT2_NAME_LEN);
