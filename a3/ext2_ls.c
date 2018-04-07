@@ -50,17 +50,17 @@ int main(int argc, char **argv) {
     int ret;
 
     if (argc != 4 && argc != 3) {
-        printf("Usage: %s [-a] <ext2 disk image name> <path to file>\n", argv[0]);
+        printf("Usage: %s <ext2 disk image name> [-a] <path to file>\n", argv[0]);
         return 0;
     }
     
     if (argc == 4 && !(strcmp(argv[1], "-a") == 0)) {
-        printf("Usage: %s [-a] <ext2 disk image name> <path to file>\n", argv[0]);
+        printf("Usage: %s <ext2 disk image name> [-a] <path to file>\n", argv[0]);
         return 0;
     }
 
     if (argc == 4) {
-        ret = do_ls(argv[2], argv[3], 1);
+        ret = do_ls(argv[1], argv[3], 1);
     } else {
         ret = do_ls(argv[1], argv[2], 0);
     }
