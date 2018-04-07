@@ -78,7 +78,7 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
 
     // gt last dir entry
     int index;
-    if ((cur_inode -> i_blocks)/2) > 11 && ){
+    if (((cur_inode -> i_blocks)/2) > 11){
         index = 11;
     } else {
         index = (cur_inode -> i_blocks)/2;
@@ -110,7 +110,7 @@ int do_cp(char *ext2_disk_name, char *osdir, char *imgdir) {
         new_dir_entry -> name_len = strlen(file_name);
         new_dir_entry -> file_type = EXT2_FT_REG_FILE;
         strncpy(new_dir_entry -> name, file_name, strlen(file_name));
-        new_dir_entry -> rec_len = EXT2_BLOCK_SIZE - (prev_size+curr_dir_len)
+        new_dir_entry -> rec_len = EXT2_BLOCK_SIZE - (prev_size+curr_dir_len);
 
     } else {
 
