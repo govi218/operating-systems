@@ -27,18 +27,20 @@ int do_rm(char *ext2_disk_name, char *dir) {
         return EISDIR;
 
     } else if (cur_inode != NULL) { 
+        char parent_dir[256];        
         char *file_name = strrchr(dir, '/');
+        
         
         if (file_name != NULL) {
             file_name = file_name + 1;
-        }
+        } else {
+            file_name = dir;
+        }      
+        
+        getParentDirectory(parent_dir, dir);
+        
 
-        char parent_dir[strlen(dir) - strlen(file_name) - 1];         
-        strncpy(parent_dir, dir, strlen(dir) - strlen(file_name));
-        parent_dir[strlen(dir) - strlen(file_name) - 1] = '\0';        
-        printf("%s\n", parent_dir);
-
-        cur_inode = go_to_destination(disk, parent_dir);
+        cur_inode = go_to_destination(disk, ".");
         
         struct ext2_dir_entry_2 *prev_dir_entry;
         struct ext2_dir_entry_2 *cur_dir_entry;        
@@ -55,7 +57,6 @@ int do_rm(char *ext2_disk_name, char *dir) {
                 char buf[EXT2_NAME_LEN + 1];            
                 strncpy(buf, cur_dir_entry->name, cur_dir_entry->name_len);
                 buf[cur_dir_entry->name_len] = '\0';
-                printf("%s\n", buf);
                 
                 if (strcmp(buf, file_name) == 0) {
                     struct ext2_inode * del_inode = (struct ext2_inode *)(disk + (1024*5) + (128*(cur_dir_entry->inode -1)));
